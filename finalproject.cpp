@@ -41,13 +41,8 @@ public:
 	Person(int);
 };
 
-
-
-
-
-
 //OpenGL functions 
-int prev_random = 0;
+int prev_random[13];
 GLint x_rotation, y_rotation = 0;
 GLUquadric* my_person; //will be a sphere
 Disease *Current_Disease;
@@ -56,7 +51,7 @@ int do_not_redraw_contact_lines = -1;
 
 void init(void) 
 {
-   glClearColor(1.0, 1.0, 1.0, 0.0);//white background
+   glClearColor(0, 0, 0, 0.0);//white background
    glShadeModel(GL_SMOOTH); //use smooth shading
 }
 //Going to store sphere coordinates here to do math for drawing contact lines
@@ -94,17 +89,15 @@ void population_contact()
 void draw_contact_lines() //this will be in the display function
 {
 	int x = 0;
-	int random = rand()%Current_Disease->infectiousness; //1 in 12
-	prev_random = random;
-	for(x=1; x<13; x++)//loop through our population
-	{//don't start with ourself
-		//first person contacting all population
-		//successful spread will draw a thick green line
-		//regular contacts are blue thin lines
-		
-		
-		if(do_not_redraw_contact_lines == -1) //infectiousness is a value from 1-12 if no params given
-		{//so if a random number % 12 = 0 (1/12 chance) is true we spread. (13 people, 1/12 should spread. should.)
+	if(do_not_redraw_contact_lines == -1) 
+	{
+		for(x=1; x<13; x++)//loop through our population
+		{//don't start with ourself
+			//first person contacting all population
+			//successful spread will draw a thick green line
+			//regular contacts are blue thin lines
+			int random = rand()%Current_Disease->infectiousness; //1 in 12
+			prev_random[x] = random; //store if we move axis we don't recontact
 			if(random == 0)
 			{
 				glLineWidth(6);
@@ -120,7 +113,6 @@ void draw_contact_lines() //this will be in the display function
 						//second point 2 units higher halfway inbetween
 						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
 						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
-
 					}
 					else
 					{
@@ -145,19 +137,74 @@ void draw_contact_lines() //this will be in the display function
 						//second point 2 units higher halfway inbetween
 						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
 						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
-
 					}
 					else
 					{
 						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first person
 						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); 
 					}
-					
+				glEnd();
+			}
+		}
+		do_not_redraw_contact_lines = 1;
+	}//we're moving axis, we want old contact lines
+	else if(do_not_redraw_contact_lines == 1)
+	{	
+		for(x=1; x<13; x++)//loop through our population
+		{//don't start with ourself
+			//first person contacting all population
+			//successful spread will draw a thick green line
+			//regular contacts are blue thin lines
+			if(prev_random[x] == 0)
+			{
+				glLineWidth(6);
+				glBegin(GL_LINES);
+					glColor3f(0, 1.0, 0);
+					if(x == 1 || x == 2 || x == 3 || x == 12)
+					{
+						//need a midpoint to see line drawn to people on current axis
+						GLfloat midpoint = sphere_coordinates[0][0] + sphere_coordinates[x][0];
+						midpoint /=2;
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first point
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						//second point 2 units higher halfway inbetween
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
+					}
+					else
+					{
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first person
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); 
+					}
+					//REMEMBER, x is our loop coordinate, draw a line from first person to person who made contact 
+				glEnd();
+			}	
+			else  //draw blue line
+			{
+				glLineWidth(2);
+				glColor3f(0, 0, 1.0);
+				glBegin(GL_LINES);
+					if(x == 1 || x == 2 || x == 3 || x == 12)
+					{
+						//need a midpoint to see line drawn to people on current axis
+						GLfloat midpoint = sphere_coordinates[0][0] + sphere_coordinates[x][0];
+						midpoint /=2;
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first point
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						//second point 2 units higher halfway inbetween
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
+					}
+					else
+					{
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first person
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); 
+					}
 				glEnd();
 			}
 		}
 	}
-	do_not_redraw_contact_lines = 1;
+
 }
 void draw_spheres()
 {
@@ -310,7 +357,7 @@ void display(void)
 	
 	glLineWidth(4);
 	glBegin(GL_LINES);
-		glColor3f(0, 0, 0);//black axis lines
+		glColor3f(1, 1, 1);//black axis lines
 		glVertex3f(-15,0,0);
 		glVertex3f(15,0,0);
 		
@@ -327,8 +374,12 @@ void display(void)
 	//glClear(GL_COLOR_BUFFER_BIT);
 	my_person = gluNewQuadric();
 	gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled 
+	glPushMatrix();
 	draw_spheres();
+	glPopMatrix();
+	glPushMatrix();
 	draw_contact_lines();
+	glPopMatrix();
 	glPopMatrix();
 	
 	glutSwapBuffers();

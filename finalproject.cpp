@@ -12,7 +12,7 @@
 //END opengl
 
 using namespace std;
-
+//				***TO COMPILE ON MAC OS DEVICES ***
 //g++ finalproject.cpp -L/System/Library/Frameworks -framework GLUT -framework OpenGL -w 
 
 class Disease 
@@ -30,10 +30,10 @@ public:
 class Person 
 {
 public:
-	bool susceptible;
-	bool infected;
-	bool removed;
-	short days_infected;
+	int susceptible;
+	int infected;
+	int removed;
+	int days_infected;
 	int number_of_contacts_per_day;
 	// will be random distribution. important people have many contacts, some have many less
 	int number_of_people_infected;
@@ -47,22 +47,27 @@ public:
 
 
 //OpenGL functions 
-
-
-
-
+int prev_random = 0;
 GLint x_rotation, y_rotation = 0;
 GLUquadric* my_person; //will be a sphere
 Disease *Current_Disease;
-Person *myPopulation[13]; //we have 10 people
+Person *myPopulation[13]; //we have 13 people
+int do_not_redraw_contact_lines = -1;
 
-void init(void)
+void init(void) 
 {
-   glClearColor(0.0, 0.0, 0.0, 0.0);//black background
-   glShadeModel(GL_SMOOTH);
-  
-
+   glClearColor(1.0, 1.0, 1.0, 0.0);//white background
+   glShadeModel(GL_SMOOTH); //use smooth shading
 }
+//Going to store sphere coordinates here to do math for drawing contact lines
+GLfloat sphere_coordinates[13][3] = //13 spheres each with 3 x,y,z coordinates
+{
+	{-15, 0, 0}, {-7.5, 0, 0}, {7.5, 0, 0}, {15, 0, 0}, //x
+	{0, 0, -15}, {0, 0, -7.5}, {0, 0, 7.5}, {0, 0, 15}, //z
+	{0, -15, 0}, {0, -7.5, 0}, {0, 7.5, 0}, {0, 15, 0}  //y
+};
+
+//
 //SPHERE-PERSON DRAWING SCHEME
 //1,2,3,4 are x-axis spheres
 //5,6,7,8 are z-axis spheres
@@ -72,142 +77,226 @@ void init(void)
 //blue = susceptible
 //green = infected
 //red = removed
+void population_contact()
+{
+	int x = 0;
+	int random = rand()%Current_Disease->infectiousness; //1 in 12
+	for(x=1; x<13; x++)
+	{
+		if(myPopulation[0]->infected == 1 && random == 0) //1 in 12
+		{
+			myPopulation[x]->infected = 1;//infect
+			myPopulation[x]->susceptible = 0;
+		}
+
+	}
+}
+void draw_contact_lines() //this will be in the display function
+{
+	int x = 0;
+	int random = rand()%Current_Disease->infectiousness; //1 in 12
+	prev_random = random;
+	for(x=1; x<13; x++)//loop through our population
+	{//don't start with ourself
+		//first person contacting all population
+		//successful spread will draw a thick green line
+		//regular contacts are blue thin lines
+		
+		
+		if(do_not_redraw_contact_lines == -1) //infectiousness is a value from 1-12 if no params given
+		{//so if a random number % 12 = 0 (1/12 chance) is true we spread. (13 people, 1/12 should spread. should.)
+			if(random == 0)
+			{
+				glLineWidth(6);
+				glBegin(GL_LINES);
+					glColor3f(0, 1.0, 0);
+					if(x == 1 || x == 2 || x == 3 || x == 12)
+					{
+						//need a midpoint to see line drawn to people on current axis
+						GLfloat midpoint = sphere_coordinates[0][0] + sphere_coordinates[x][0];
+						midpoint /=2;
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first point
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						//second point 2 units higher halfway inbetween
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
+
+					}
+					else
+					{
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first person
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); 
+					}
+					//REMEMBER, x is our loop coordinate, draw a line from first person to person who made contact 
+				glEnd();
+			}	
+			else  //draw blue line
+			{
+				glLineWidth(2);
+				glColor3f(0, 0, 1.0);
+				glBegin(GL_LINES);
+					if(x == 1 || x == 2 || x == 3 || x == 12)
+					{
+						//need a midpoint to see line drawn to people on current axis
+						GLfloat midpoint = sphere_coordinates[0][0] + sphere_coordinates[x][0];
+						midpoint /=2;
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first point
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						//second point 2 units higher halfway inbetween
+						glVertex3f(midpoint, sphere_coordinates[x][1]+2, sphere_coordinates[x][2]); //second point
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); //third point
+
+					}
+					else
+					{
+						glVertex3f(sphere_coordinates[0][0], sphere_coordinates[0][1], sphere_coordinates[0][2]); //first person
+						glVertex3f(sphere_coordinates[x][0], sphere_coordinates[x][1], sphere_coordinates[x][2]); 
+					}
+					
+				glEnd();
+			}
+		}
+	}
+	do_not_redraw_contact_lines = 1;
+}
 void draw_spheres()
 {
-	glColor3f(1.0, 1.0, 1.0); 
+	
 	my_person = gluNewQuadric();
 	gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled green spheres
 	//x-axis
 	glPushMatrix();
-		glTranslatef(-15,0,0);//far end of x-axis
-		if(myPopulation[0]->infected == true) //if person is infected, draw them green
-		{
-			glColor3f(0,1.0,0);
+		glTranslatef(-15, 0, 0);//far end of x-axis
+		if(myPopulation[0]->infected == 1) //if person is infected, draw them green
+		{	
+			glColor3f(0, 1.0, 0);
 		}
-		else if(myPopulation[0]->susceptible == true) //if person is susceptible, draw them blue
+		else if(myPopulation[0]->susceptible == 1) //if person is susceptible, draw them blue
 		{
-			glColor3f(0,0,1.0);
+			glColor3f(0, 0, 1.0);
 		}
-		else if(myPopulation[0]->removed == true) //if person is removed, draw them red
+		else if(myPopulation[0]->removed == 1) //if person is removed, draw them red
 		{
-			glColor3f(1.0,0,0);
+			glColor3f(1.0, 0, 0);
 		}
-		gluSphere(my_person, 1, 15, 15); //draw person (sphere)
+		gluSphere(my_person, 1, 40, 40); //draw person (sphere)
 	glPopMatrix();//pop translation matrix
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(-7.5,0,0);
-			if(myPopulation[1]->infected == true) //if person is infected, draw them green
+		glTranslatef(-7.5, 0, 0);
+		if(myPopulation[1]->infected == 1) //if person is infected, draw them green
 		{
-			glColor3f(0,1.0,0);
+			glColor3f(0, 1.0, 0);
 		}
-		else if(myPopulation[1]->susceptible == true) //if person is susceptible, draw them blue
+		else if(myPopulation[1]->susceptible == 1) //if person is susceptible, draw them blue
 		{
-			glColor3f(0,0,1.0);
+			glColor3f(0, 0, 1.0);
 		}
-		else if(myPopulation[1]->removed == true) //if person is removed, draw them red
+		else if(myPopulation[1]->removed == 1) //if person is removed, draw them red
 		{
-			glColor3f(1.0,0,0);
+			glColor3f(1.0, 0, 0);
 		}
-		gluSphere(my_person, 1, 15, 15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	//begin positive x
 	glPushMatrix();
 		glTranslatef(15,0,0);
-			if(myPopulation[2]->infected == true) //if person is infected, draw them green
+		if(myPopulation[2]->infected == 1) //if person is infected, draw them green
 		{
-			glColor3f(0,1.0,0);
+			glColor3f(0, 1.0, 0);
 		}
-		else if(myPopulation[2]->susceptible == true) //if person is susceptible, draw them blue
+		else if(myPopulation[2]->susceptible == 1) //if person is susceptible, draw them blue
 		{
-			glColor3f(0,0,1.0);
+			glColor3f(0, 0, 1.0);
 		}
-		else if(myPopulation[2]->removed == true) //if person is removed, draw them red
+		else if(myPopulation[2]->removed == 1) //if person is removed, draw them red
 		{
-			glColor3f(1.0,0,0);
+			glColor3f(1.0, 0, 0);
 		}
-		gluSphere(my_person, 1, 15, 15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
 		glTranslatef(7.5,0,0);
-			if(myPopulation[3]->infected == true) //if person is infected, draw them green
+		if(myPopulation[3]->infected == 1) //if person is infected, draw them green
 		{
-			glColor3f(0,1.0,0);
+			glColor3f(0, 1.0, 0);
 		}
-		else if(myPopulation[3]->susceptible == true) //if person is susceptible, draw them blue
+		else if(myPopulation[3]->susceptible == 1) //if person is susceptible, draw them blue
 		{
-			glColor3f(0,0,1.0);
+			glColor3f(0, 0, 1.0);
 		}
-		else if(myPopulation[3]->removed == true) //if person is removed, draw them red
+		else if(myPopulation[3]->removed == 1) //if person is removed, draw them red
 		{
-			glColor3f(1.0,0,0);
+			glColor3f(1.0, 0, 0);
 		}
-		gluSphere(my_person, 1, 15, 15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 //------------------------------------------------z-axis
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,0,-15);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 0, -15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,0,-7.5);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 0, -7.5);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//begin positive z
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,0,15);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 0, 15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,0,7.5);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 0, 7.5);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 //--------------------------------------y-axis
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,15,0);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 15, 0);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,7.5,0);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, 7.5, 0);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//end positive y
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,-7.5,0);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, -7.5, 0);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
-		glTranslatef(0,-15,0);
-		gluSphere(my_person, 1, 15, 15);
+		glTranslatef(0, -15, 0);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//--------------------------------------y-axis
 	
-	glColor3f(1.0, 1.0, 1.0); //
+	
 	glPushMatrix();
 		//origin
-		gluSphere(my_person, 1, 15, 15);
+		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 }
+
+
 void display(void)
 {
 	int i = 0;
@@ -218,9 +307,10 @@ void display(void)
 	glRotatef((GLfloat) y_rotation, 0.0, 1.0, 0.0);
 	
 	//apply rotations to axes
-	glLineWidth(3);
+	
+	glLineWidth(4);
 	glBegin(GL_LINES);
-		glColor3f(1,1,1);//white lines
+		glColor3f(0, 0, 0);//black axis lines
 		glVertex3f(-15,0,0);
 		glVertex3f(15,0,0);
 		
@@ -230,15 +320,15 @@ void display(void)
 		glVertex3f(0,0,-15);
 		glVertex3f(0,0,15);
 	glEnd();
-
 	//push rotations
 	
 
-	glColor3f(0.0, 1.0, 0.0);
+	//glColor3f(0.0, 1.0, 0.0);
+	//glClear(GL_COLOR_BUFFER_BIT);
 	my_person = gluNewQuadric();
-	gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled green spheres
-	
+	gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled 
 	draw_spheres();
+	draw_contact_lines();
 	glPopMatrix();
 	
 	glutSwapBuffers();
@@ -252,23 +342,28 @@ void keyboard(unsigned char key, int x, int y)
 	}
 	else if(key == 'a')
 	{
-		x_rotation-=2;
-		glutPostRedisplay();    
+		x_rotation-=2; //rotate x-axis 2 degrees counter clockwise
+		glutPostRedisplay(); //this tell the program to redraw window with new rotation
 	}
 	else if(key == 'd')
 	{
-		x_rotation+=2;
+		x_rotation+=2; //x-axis clockwise
 		glutPostRedisplay();    
-	}
+	} 
 	else if(key == 'w')
 	{
-		y_rotation+=2;
+		y_rotation+=2; //y-axis clockwise
 		glutPostRedisplay();    
 	}
 	else if(key == 's')
 	{
-		y_rotation-=2;
+		y_rotation-=2; //rotate y-axis 2 degrees counter-clockwise
 		glutPostRedisplay();    
+	}
+	else if(key == 'r')
+	{
+		do_not_redraw_contact_lines*=-1;//make it bounce between -1 and 1 to toggle
+		glutPostRedisplay();
 	}
 
 }
@@ -320,6 +415,9 @@ void Instantiate_Population()
 	{
 		// want random contacts from 1-10
 		myPopulation[x] = new Person(rand()%10);
+		myPopulation[x]->susceptible = 1;
+		myPopulation[x]->infected = 0;
+		myPopulation[x]->removed = 0;
 	}
 	
 	// instantiate our population
@@ -360,7 +458,7 @@ int main(int argc, char *argv[])
 	else
 	{
 		cout << "Disease parameters not provided." << endl;
-		Current_Disease = new Disease(8, 10);
+		Current_Disease = new Disease(8, 12);
 		//infectious for 8 days, 1/10 chance to spread disease on contact
 		
 	}
@@ -368,11 +466,13 @@ int main(int argc, char *argv[])
 
 	
 	Instantiate_Population();
-	Free_Population_Memory();
-	free(Current_Disease);
+	myPopulation[0]->infected = 1;
+	myPopulation[0]->susceptible = 0;
+	
 	// 
 	glutMainLoop();
-
+	Free_Population_Memory();
+	free(Current_Disease);
 
 	return 0;
 }

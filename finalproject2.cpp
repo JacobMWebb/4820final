@@ -51,7 +51,7 @@ int do_not_redraw_contact_lines = -1;
 
 void init(void) 
 {
-   glClearColor(0, 0, 0, 0);//black background
+   glClearColor(0, 0, 0, 0.0);//white background
    glShadeModel(GL_SMOOTH); //use smooth shading
 }
 //Going to store sphere coordinates here to do math for drawing contact lines
@@ -72,23 +72,60 @@ GLfloat sphere_coordinates[13][3] = //13 spheres each with 3 x,y,z coordinates
 //blue = susceptible
 //green = infected
 //red = removed
-
+void another_day_infected()
+{
+	int z = 0;
+	for(z=0; z<13; z++)
+	{
+		if(myPopulation[z]->infected == 1)
+		{
+			if(myPopulation[z]->days_infected == Current_Disease->disease_period)
+			{
+				myPopulation[z]->infected = 0;
+				myPopulation[z]->susceptible = 0;
+				myPopulation[z]->removed = 1;
+			}
+			else
+			{
+				myPopulation[z]->days_infected++;//add one day to days infected
+			}
+			
+		}
+	}
+}
 void draw_contact_lines() //this will be in the display function
 {
 	int x = 0;
+	
 	if(do_not_redraw_contact_lines == -1) 
 	{
-		for(x=1; x<12; x++)//loop through our population
+		x = 0;
+	
+		for(x=1; x<13; x++)//loop through our population
 		{//don't start with ourself
 			//first person contacting all population
 			//successful spread will draw a thick green line
 			//regular contacts are blue thin lines
 			int random = rand()%Current_Disease->infectiousness; //1 in 12
 			prev_random[x] = random; //store if we move axis we don't recontact
+			
 			if(random == 0)
 			{
-				//we've infected someone
-				
+				if(myPopulation[x]->infected == 1)
+				{
+					if(myPopulation[x]->days_infected == Current_Disease->disease_period)
+					{
+						myPopulation[x]->infected = 0;
+						myPopulation[x]->susceptible = 0;
+						myPopulation[x]->removed = 1;
+					}
+					myPopulation[x]->days_infected++;
+				}
+				else if(myPopulation[x]->removed != 1) //if not previously infected
+				{
+					myPopulation[x]->infected = 1;
+					myPopulation[x]->susceptible = 0;
+				}
 				glLineWidth(6);
 				glBegin(GL_LINES);
 					glColor3f(0, 1.0, 0);
@@ -137,9 +174,11 @@ void draw_contact_lines() //this will be in the display function
 		}
 		do_not_redraw_contact_lines = 1;
 	}//we're moving axis, we want old contact lines
-	else if(do_not_redraw_contact_lines == 1)
+	else
 	{	
-		for(x=1; x<12; x++)//loop through our population
+		x=0;
+		
+		for(x=1; x<13; x++)//loop through our population
 		{//don't start with ourself
 			//first person contacting all population
 			//successful spread will draw a thick green line
@@ -197,7 +236,6 @@ void draw_contact_lines() //this will be in the display function
 }
 void draw_spheres()
 {
-	
 	my_person = gluNewQuadric();
 	gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled green spheres
 	//x-axis
@@ -221,202 +259,202 @@ void draw_spheres()
 	
 	glPushMatrix();
 		glTranslatef(-7.5, 0, 0);
-		// if(myPopulation[1]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[1]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[1]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		if(myPopulation[1]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[1]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[1]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
-	
+
 	
 	//begin positive x
 	glPushMatrix();
 		glTranslatef(15,0,0);
-		// if(myPopulation[2]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[2]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[2]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		if(myPopulation[2]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[2]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[2]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
 	
 	glPushMatrix();
 		glTranslatef(7.5,0,0);
-		// if(myPopulation[3]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[3]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[3]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		if(myPopulation[3]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[3]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[3]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 //------------------------------------------------z-axis
 	
 	glPushMatrix();
 		glTranslatef(0, 0, -15);
-		// if(myPopulation[4]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[4]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[4]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		if(myPopulation[4]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[4]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[4]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 
 	
 	glPushMatrix();
 		glTranslatef(0, 0, -7.5);
-		// if(myPopulation[5]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[5]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[5]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		if(myPopulation[5]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[5]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[5]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//begin positive z
 	
 	
 	glPushMatrix();
-		glTranslatef(0, 0, 15);
-		// if(myPopulation[6]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[6]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[6]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, 0, 7.5);
+		if(myPopulation[6]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[6]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[6]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
 	
 	glPushMatrix();
-		glTranslatef(0, 0, 7.5);
-		// if(myPopulation[7]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[7]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[7]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, 0, 15);
+		if(myPopulation[7]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[7]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[7]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 //--------------------------------------y-axis
 	
 	
 	glPushMatrix();
-		glTranslatef(0, 15, 0);
-		// if(myPopulation[8]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[8]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[8]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, -15, 0);
+		if(myPopulation[8]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[8]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[8]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	
 	
 	glPushMatrix();
-		glTranslatef(0, 7.5, 0);
-		// if(myPopulation[9]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[9]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[9]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, -7.5, 0);
+		if(myPopulation[9]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[9]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[9]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//end positive y
 	
 	
 	glPushMatrix();
-		glTranslatef(0, -7.5, 0);
-		// if(myPopulation[10]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[10]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[10]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, 7.5, 0);
+		if(myPopulation[10]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[10]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[10]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 
 	
 	glPushMatrix();
-		glTranslatef(0, -15, 0);
-		// if(myPopulation[11]->infected == 1) //if person is infected, draw them green
-		// {
-		// 	glColor3f(0, 1.0, 0);
-		// }
-		// else if(myPopulation[11]->susceptible == 1) //if person is susceptible, draw them blue
-		// {
-		// 	glColor3f(0, 0, 1.0);
-		// }
-		// else if(myPopulation[11]->removed == 1) //if person is removed, draw them red
-		// {
-		// 	glColor3f(1.0, 0, 0);
-		// }
+		glTranslatef(0, 15, 0);
+		if(myPopulation[11]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[11]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[11]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
 	//--------------------------------------y-axis
@@ -424,20 +462,22 @@ void draw_spheres()
 	
 	glPushMatrix();
 		//origin
-		// if(myPopulation[12]->infected == 1) //if person is infected, draw them green
-		// 	{
-		// 		glColor3f(0, 1.0, 0);
-		// 	}
-		// 	else if(myPopulation[12]->susceptible == 1) //if person is susceptible, draw them blue
-		// 	{
-		// 		glColor3f(0, 0, 1.0);
-		// 	}
-		// 	else if(myPopulation[12]->removed == 1) //if person is removed, draw them red
-		// 	{
-		// 		glColor3f(1.0, 0, 0);
-		// 	}
+		if(myPopulation[12]->infected == 1) //if person is infected, draw them green
+		{
+			glColor3f(0, 1.0, 0);
+		}
+		else if(myPopulation[12]->susceptible == 1) //if person is susceptible, draw them blue
+		{
+			glColor3f(0, 0, 1.0);
+		}
+		else if(myPopulation[12]->removed == 1) //if person is removed, draw them red
+		{
+			glColor3f(1.0, 0, 0);
+		}
 		gluSphere(my_person, 1, 40, 40);
 	glPopMatrix();
+	//cout << "please";
+	
 }
 
 
@@ -454,7 +494,7 @@ void display(void)
 	
 	glLineWidth(4);
 	glBegin(GL_LINES);
-		glColor3f(1.0, 1.0, 1.0);//white axis lines
+		glColor3f(1, 1, 1);//black axis lines
 		glVertex3f(-15,0,0);
 		glVertex3f(15,0,0);
 		
@@ -471,50 +511,12 @@ void display(void)
 	//glClear(GL_COLOR_BUFFER_BIT);
 	//my_person = gluNewQuadric();
 	//gluQuadricDrawStyle(my_person, GLU_POINT);//draw filled 
-	
-	glPushMatrix();
-	draw_spheres();
-	glPopMatrix();
-	glPushMatrix();
 	draw_contact_lines();
-	glPopMatrix();
+	draw_spheres();	
+	//draw_contact_lines();
 	glPopMatrix();
 	
 	glutSwapBuffers();
-}
-
-void keyboard(unsigned char key, int x, int y)
-{
-	if(key == 27)
-	{
-		exit(0);
-	}
-	else if(key == 'a')
-	{
-		x_rotation-=2; //rotate x-axis 2 degrees counter clockwise
-		glutPostRedisplay(); //this tell the program to redraw window with new rotation
-	}
-	else if(key == 'd')
-	{
-		x_rotation+=2; //x-axis clockwise
-		glutPostRedisplay();    
-	} 
-	else if(key == 'w')
-	{
-		y_rotation+=2; //y-axis clockwise
-		glutPostRedisplay();    
-	}
-	else if(key == 's')
-	{
-		y_rotation-=2; //rotate y-axis 2 degrees counter-clockwise
-		glutPostRedisplay();    
-	}
-	else if(key == 'r')
-	{
-		do_not_redraw_contact_lines*=-1;//make it bounce between -1 and 1 to toggle
-		glutPostRedisplay();
-	}
-
 }
 
 void reshape(int w, int h)
@@ -531,17 +533,22 @@ void reshape(int w, int h)
 
 //END OpenGL functions
 
+
 Person::Person(int my_contacts_per_day) 
 {
-	susceptible = 1;
-	infected = 0;
-	removed = 0;
+	susceptible = true;
+	infected = false;
+	removed = false;
 	days_infected = 0;
 	number_of_contacts_per_day = my_contacts_per_day; 
 	// passed on object creation
 	number_of_people_infected = 0;
 	// starts at 0. really just a fun statistic
 }
+
+
+
+
 Disease::Disease(int my_disease_period, int my_infectiousness)
 {
 	disease_period = my_disease_period;
@@ -555,7 +562,7 @@ void Instantiate_Population()
 	int i,x = 0;
 
 	
-	for(x=1; x<12; x++)
+	for(x=0; x<13; x++)
 	{
 		// want random contacts from 1-10
 		myPopulation[x] = new Person(rand()%10);
@@ -576,9 +583,53 @@ void Free_Population_Memory()
 	}
 }
 
+void keyboard(unsigned char key, int x, int y)
+{
+	if(key == 27)
+	{
+		Free_Population_Memory();
+		free(Current_Disease);
+		exit(0);
+	}
+	else if(key == 'a')
+	{
+		x_rotation-=2; //rotate x-axis 2 degrees counter clockwise
+		
+	}
+	else if(key == 'd')
+	{
+		x_rotation+=2; //x-axis clockwise
+		
+	} 
+	else if(key == 'w')
+	{
+		y_rotation+=2; //y-axis clockwise
+		   
+	}
+	else if(key == 's')
+	{
+		y_rotation-=2; //rotate y-axis 2 degrees counter-clockwise
+		
+	}
+	else if(key == 'r')
+	{
+		do_not_redraw_contact_lines*=-1;//make it bounce between -1 and 1 to toggle
+		another_day_infected();
+	}
+	glutPostRedisplay(); 
+
+}
+void spinDisplay(void) {
+	x_rotation+=1;
+	y_rotation+=1;
+   glutPostRedisplay();
+}
 
 int main(int argc, char *argv[])
 {
+	Instantiate_Population();
+	myPopulation[0]->infected = 1; //infect our first person
+	myPopulation[0]->susceptible = 0;
 	
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
@@ -586,6 +637,7 @@ int main(int argc, char *argv[])
 	glutInitWindowPosition (0, 0); //initial position of window (0,0) is top left corner
 	glutCreateWindow ("Jacob and Isaac SIR Visualization"); //title of window
 	init();
+	glutIdleFunc(spinDisplay);
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display); //display callback
 	
@@ -609,14 +661,9 @@ int main(int argc, char *argv[])
 	// launch program with disease peroid and infectiousness
 
 	
-	Instantiate_Population();
-	//myPopulation[0]->infected = 1;
-	//myPopulation[0]->susceptible = 0;
-	
-	// 
+
 	glutMainLoop();
-	Free_Population_Memory();
-	free(Current_Disease);
+
 
 	return 0;
 }
